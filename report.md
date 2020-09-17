@@ -1,10 +1,27 @@
-Please create Report.md, a Markdown format text file in the top level of your GitHub repository. The report should be concise, the equivalent of about 2 pages. Please compose the report as if it were an informal engineering memo to give to your manager in a workplace.
+Tasks:
+This report will briefly highlight the findings for each task in sequential order. Note that while Youssef and Yousuf collaborated on the code conceptually, they both implemented it and ran it individually to corroborate the results. The same data.txt file was used by both to attain the results below. Task 0 consists of forking the repository and then running the server and client codes locally. Upon doing so, the phrase that comes up is:
 
-Some points to think about:
+“ECE Senior Capstone Simulation”
 
-how is this simulation reflective of the real world?
-how is this simulation deficient? What factors does it fail to account for?
-how is the difficulty of initially using this Python websockets library as compared to a compiled language e.g. C++ websockets
-would it be better to have the server poll the sensors, or the sensors reach out to the server when they have data?
+Task 1 comprises taking the packets received on the client side, and writing that data to a text file. This data is then analyzed for task 2, with the following results (off of 1000 initial data points) for class1:
 
-The simluation is reflective of the real world because 
+The temperature variance is 79.5 and the temperature median is 27.0
+The occupancy variance is: 19.8 the occupancy median is 19.0
+The histograms can be seen by running the code with the data.txt file in the github repo
+The Delta_T variance is 0.904 and the Delta_T mean is 0.948, which is similar to an Erlang distribution with mu approximately equals one. The parameter k, from qualitative inspection, would have to be > 2
+
+Finally, the algorithm for task 3 consists of devising an algorithm for detecting and removing bad data. Since the temperature measured in any given room should be approx the mean of the boltzmann distribution of particles in the room +/- the uncertainty of the sensor, it is a sufficient condition that anything larger than +/- 1.5 standard deviation of the data set is an anomaly. This is sufficient for all three rooms, since even though they may vary in size and occupancy (and hence temperature), the range is large enough to accommodate. Using this metric, it is found that 0.7% of the data is anomalous. However, this does not necessarily indicate a faulty sensor since it is within the realm of random error.
+
+Discussion Questions:
+The simulation reflects the real world because there are many instances where we have sensors and those sensors are giving us data, and similar to the real world, those sensors sometimes produce data outliers. For example, there are carbon dioxide sensors in alarms that track the amount of carbon dioxide in the air, and they report when it reports readings above a certain threshold. We cannot comment on the accuracy of some of the sensors (eg. carbon dioxide), but there are often carbon dioxide sensors (such as in fire alarms) and temperature sensors (thermostats and HVAC systems) in most rooms. Similar to our simulations, we can also use and analyze the data from real world sensors. For example, you can have an ultrasonic sensor in an automated door, and the door is programmed to open when an object gets a certain distance away. The main difference between the real world system and ours is instead of using the sensor output to inform a real physical decision, we plot and analyze the data to find the spread and determine the quality of the virtual sensors. We can also code out sensors using a board and some components. Further, the simulation differs from the real world IoT system in a few key ways.
+
+The first thing the simulation does not account for is software/hardware integration. The senior design projects  will not only be software and simulations. We have not developed anything for an Arduino or a Raspberry Pi, or any board to create the sensor circuit where we would get the readings from. This is probably because of the COVID-19 situation where we cannot go with our partners in a lab for hours figuring out how to make the circuit. The members of this group (Youssef and Yousuf) live in timezones 8 hours apart and if we were to send each other the board, it would cost a lot of money and time, and risk damaging the components. For the actual  project,  groups might have to get creative in constructing something physical, but we’ll have to wait and see.
+
+Secondly, we do not know the accuracy of the simulation. Typically, when we are working with numbers and data, there is usually some context with them. For this case it would be the size of the room, placement of the sensors, their tolerances, etc. Though sometimes in machine learning, you can have unsupervised clustering models where the data is completely unlabelled, and where context isn’t arguably as important.
+
+Initially, not all of the group had experience with python, which increased the learning curve for the project. Though past experience with languages like C++, Java, and Matlab helped a lot in adapting. Also, there were a lot of moving parts, and we feel that when we do our code for our Senior Projects, there will be a lot of moving parts along with boards/components to make it work. Ultimately, the ease of using python vs other languages or tools is subjective and contingent on the starting point, preference, and many other human factors of the user.
+
+	In general, the best option between polling sensors and sensors reaching out whenever they get data is based on the problem at hand.
+ 
+Sometimes, it is more beneficial for the sensors to reach out than to wait for the server to poll the sensors, such as in time sensitive applications where a single data point above a threshold value creates direct action. Further, for initial testing of a system, having real time data can help you determine if for some reason there is a mistake. This allows deployment of a fix, which can limit potential damage.Take the example of the stock market: if it did not get updated in real time, many Wall Street firms that rely on these momentary fluctuations to inform their trading decisions , could take a hit and many could lose money. However, the problem with polling is that it will use more energy/power since it is more active and it needs a stronger connection to the server since it is sampling at higher rates and more storage. The complement (server polling the sensor) is ideal in a case such as in Google’s nest home thermostats, whose readings aren’t connected to any high stakes outcome. It would be excessive for your thermostat to record every single momentary fluctuation of the sensors instead of a time gated rolling average.
+
