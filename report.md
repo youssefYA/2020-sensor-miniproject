@@ -6,3 +6,5 @@ how is this simulation reflective of the real world?
 how is this simulation deficient? What factors does it fail to account for?
 how is the difficulty of initially using this Python websockets library as compared to a compiled language e.g. C++ websockets
 would it be better to have the server poll the sensors, or the sensors reach out to the server when they have data?
+
+The simluation is reflective of the real world because 
