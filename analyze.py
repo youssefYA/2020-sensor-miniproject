@@ -14,66 +14,88 @@ import matplotlib.pyplot as plt
 from scipy.stats import gamma
 import numpy as np
 
-from sp_iotsim.fileio import load_data
+ef load_data(file: Path) -> T.Dict[str, pandas.DataFrame]:
+
+    temperature = {}
+    occupancy = {}
+    co2 = {}
+    time = []
+    with open(file, "r") as f:
+        for line in f:
+
+            r = json.loads(line)
+            room = list(r.keys())[0]
+            currtime = datetime.fromisoformat(r[room]["time"])
+
+            temperature[currtime] = {room: r[room]["temperature"][0]}
+            occupancy[currtime] = {room: r[room]["occupancy"][0]}
+            co2[currtime] = {room: r[room]["co2"][0]}
+            time += [currtime]
+    data = {
+        "temperature": pandas.DataFrame.from_dict(temperature, "index").sort_index(),
+        "occupancy": pandas.DataFrame.from_dict(occupancy, "index").sort_index(),
+        "co2": pandas.DataFrame.from_dict(co2, "index").sort_index(),
+    }
 
 
-def plot_time(time: pandas.Series):
-    """
-    make a probability density function estimate based on the data
-    in this simulation, time interval is same distribution for all sensors and rooms
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html
-    """
+    return data, time
 
-    intervals = time.diff().dropna().dt.total_seconds()
-    Nbin = 100
+file = '/Users/youssefYA/2020-sensor-miniproject/data.txt'
 
-    Fa, Floc, Fscale = gamma.fit(intervals)
+data, time = load_data(file)
 
-    ti = np.arange(0.01, 5, 0.01)  # arbitrary time interval range to plot over
-    pd = gamma.pdf(ti, Fa, loc=Floc, scale=Fscale)  # fit
+#Class1 chosen
+temp = data['temperature'].class1
+temp = temp.dropna()
+temp_med = temp.median()
+temp_var = temp.var()
+print('The temperature variance is: ' + str(temp_var) +'\n')
+print('The temperature median is: ' + str(temp_med) +'\n')
+
+occ = data['occupancy'].class1
+occ = occ.dropna()
+occ_med = occ.median()
+occ_var = occ.var()
+print('Occupancy variance is: ' + str(occ_var) +'\n')
+print('Occupancy median is: ' + str(occ_med) +'\n')
+
+co2 = data['co2'].class1
+co2 = co2.dropna()
+
+#histogram for each label
+
+names = ['Temperature', 'Occupancy', 'Carbon Dioxide']
+dats = [temp, occ, co2]
+units = ['$^\circ$C', 'No. People', '?']
+
+for n,i in enumerate(names):
 
     ax = plt.figure().gca()
-    ax.plot(ti, pd)
-    ax.set_xlabel("Time Interval (seconds)")
-    ax.set_ylabel("Probability")
-    ax.set_title("Time interval observed")
-
-    # add the measured data to the plot
-    ax.hist(intervals, bins=Nbin)
-
-
-def plot_temperature(temp: pandas.Series, name: str):
-    """
-    Plot temperature for a room
-    """
-
-    temp = temp.dropna()
-    # get rid of nuisance empty values with .dropna()
-    ax = plt.figure().gca()
-    temp.hist(ax=ax)
+    dats[n].hist()
     ax.set_ylabel("# of occurences")
-    ax.set_xlabel(r"Temperature [$^\circ$C]")
-    ax.set_title(f"{name} temperature")
+    ax.set_xlabel(i +  units[n])
+    ax.set_title("Class1 " + i)
 
-    ax = plt.figure().gca()
-    ax.plot(temp.index, temp.values)
-    ax.set_xlabel("time")
-    ax.set_ylabel(r"Temperature [$^\circ$C]")
-    ax.set_title(f"{name} temperature")
+deltime = []
+for i in range(len(time)-1):
+
+    currdel = time[i+1] - time[i]
+    currdel = currdel.total_seconds()
+    deltime += [currdel]
+
+#to be able to use built in pandas functions
+deltime = pandas.DataFrame(deltime, columns=['Del_Time'])
+
+deltime_mean = deltime.mean()
+deltime_var = deltime.var()
+
+print('The Delta_T variance is: ' + str(deltime_var) +'\n')
+print('The Delta_T mean is: ' + str(deltime_mean) +'\n')
 
 
-if __name__ == "__main__":
-    p = argparse.ArgumentParser(description="load and analyse IoT JSON data")
-    p.add_argument("file", help="path to JSON data file")
-    p.add_argument("room", help="room to plot")
-    P = p.parse_args()
+ax = plt.figure().gca()
+deltime.hist()
+ax.set_ylabel("# of occurences")
+ax.set_xlabel("Delta T [s]")
 
-    file = Path(P.file).expanduser()
-
-    data = load_data(file)
-
-    plot_time(data["temperature"].index.to_series())
-
-    plot_temperature(data["temperature"][P.room], P.room)
-
-    plt.show()
+plt.show()
